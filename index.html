@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="In&amp;Out: a freelance and gig website for Uzbekistan (demo).">
+  <title data-i18n="title.home">In&Out: find help, find work</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="home">
+  <div id="site-header"></div>
+
+  <main id="main">
+
+    <section class="hero">
+      <div class="container">
+        <h1 data-i18n="home.hero.title">Find help. Find work. Get it done.</h1>
+        <p data-i18n="home.hero.text">In&amp;Out connects people who offer services with people who need them, online or in person, across Uzbekistan.</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="browse.html" data-i18n="common.browseGigs">Browse gigs</a>
+          <a class="btn btn-light" href="post-gig.html" data-i18n="common.postGig">Post a gig</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title" data-i18n="home.cat.title">Popular categories</h2>
+        <div id="cat-grid" class="cat-grid"></div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container">
+        <h2 class="section-title" data-i18n="home.featured.title">Featured gigs</h2>
+        <p class="center muted" data-i18n="home.featured.note">All gigs on this demo site are sample data.</p>
+        <div id="featured" class="grid grid-3"></div>
+        <div class="section-link">
+          <a class="btn btn-outline" href="browse.html" data-i18n="common.browseGigs">Browse gigs</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title" data-i18n="home.how.title">How it works</h2>
+        <ol class="steps">
+          <li>
+            <h3 data-i18n="how.c.1.title">Find a gig</h3>
+            <p class="muted" data-i18n="how.c.1.text">Search by category, city or price.</p>
+          </li>
+          <li>
+            <h3 data-i18n="how.c.2.title">Check the profile</h3>
+            <p class="muted" data-i18n="how.c.2.text">Read about the worker, their skills and their verification status.</p>
+          </li>
+          <li>
+            <h3 data-i18n="how.c.3.title">Agree on the details</h3>
+            <p class="muted" data-i18n="how.c.3.text">Talk about the job, the time and the price before you start.</p>
+          </li>
+          <li>
+            <h3 data-i18n="how.c.4.title">Get it done</h3>
+            <p class="muted" data-i18n="how.c.4.text">Meet in person or work online, then leave an honest review.</p>
+          </li>
+        </ol>
+        <div class="section-link">
+          <a class="btn btn-outline" href="how-it-works.html" data-i18n="common.learnMore">Learn more</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container">
+        <h2 class="section-title" data-i18n="home.trust.title">Built for trust</h2>
+        <div class="grid grid-3">
+          <div class="card">
+            <div class="icon-circle">👤</div>
+            <h3 data-i18n="home.trust.1.title">Clear profiles</h3>
+            <p class="muted" data-i18n="home.trust.1.text">Every worker has a profile with skills, languages and a clear verification status.</p>
+          </div>
+          <div class="card">
+            <div class="icon-circle">🛡️</div>
+            <h3 data-i18n="home.trust.2.title">Safety first</h3>
+            <p class="muted" data-i18n="home.trust.2.text">Simple safety tips at every step, for women and men.</p>
+          </div>
+          <div class="card">
+            <div class="icon-circle">🌐</div>
+            <h3 data-i18n="home.trust.3.title">Your language</h3>
+            <p class="muted" data-i18n="home.trust.3.text">Use the whole site in English, Russian or Uzbek.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero cta-hero">
+      <div class="container">
+        <h2 data-i18n="home.cta.title">Ready to start?</h2>
+        <p data-i18n="home.cta.text">Browse gigs or post your own. It takes only a few minutes.</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="browse.html" data-i18n="common.browseGigs">Browse gigs</a>
+          <a class="btn btn-light" href="signup.html" data-i18n="nav.signup">Sign up</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="site-footer"></div>
+
+  <noscript>
+    <p class="notice notice-error" style="margin:16px">
+      This site needs JavaScript. Please switch it on in your browser.<br>
+      Для работы сайта нужен JavaScript. Пожалуйста, включите его в браузере.<br>
+      Sayt ishlashi uchun JavaScript kerak. Iltimos, uni brauzerda yoqing.
+    </p>
+  </noscript>
+
+  <script src="features.js"></script>
+  <script src="js/safe.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/features/payments.js"></script>
+  <script src="js/features/escrow.js"></script>
+  <script src="js/features/idcheck.js"></script>
+  <script src="js/features/calls.js"></script>
+  <script src="js/features/sms.js"></script>
+  <script src="js/features/email.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+
+  <script>
+    (function () {
+      var IO = window.InAndOut;
+
+      function render() {
+        var catBox = document.getElementById('cat-grid');
+        var featBox = document.getElementById('featured');
+        try {
+          var D = IO.data;
+          if (!D || !D.categories || !D.gigs || !IO.ui) { throw new Error('Sample data is missing'); }
+
+          IO.clear(catBox);
+          IO.clear(featBox);
+
+          /* Category tiles. Each one will open the browse page already filtered. */
+          for (var i = 0; i < D.categories.length; i++) {
+            var cat = D.categories[i];
+            var tile = IO.el('a', 'cat-card');
+            tile.setAttribute('href', 'browse.html?category=' + encodeURIComponent(cat.id));
+            tile.appendChild(IO.el('span', 'cat-icon', cat.icon));
+            tile.appendChild(IO.tEl('span', '', 'cat.' + cat.id));
+            catBox.appendChild(tile);
+          }
+
+          /* The 3 newest gigs. */
+          var newest = D.gigs.slice().sort(function (a, b) {
+            return a.posted < b.posted ? 1 : (a.posted > b.posted ? -1 : 0);
+          }).slice(0, 3);
+
+          if (newest.length === 0) {
+            featBox.className = '';
+            featBox.appendChild(IO.emptyBox('🔍', 'browse.empty.title', 'browse.empty.text',
+              'post-gig.html', 'common.postGig'));
+          } else {
+            featBox.className = 'grid grid-3';
+            for (var j = 0; j < newest.length; j++) { featBox.appendChild(IO.ui.gigCard(newest[j])); }
+          }
+        } catch (err) {
+          IO.clear(catBox);
+          IO.clear(featBox);
+          featBox.className = '';
+          featBox.appendChild(IO.el('div', 'notice notice-error', IO.t('error.load')));
+          IO.reportError(err, 'error.load');
+        }
+      }
+
+      render();
+      document.addEventListener('inandout:langchange', render);
+    })();
+  </script>
+</body>
+</html>

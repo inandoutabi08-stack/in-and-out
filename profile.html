@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="title.profile">Worker profile | In&Out</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="profile">
+  <div id="site-header"></div>
+
+  <main id="main" class="section">
+    <div class="container" id="profile-box"></div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <noscript>
+    <p class="notice notice-error" style="margin:16px">
+      This site needs JavaScript. Please switch it on in your browser.<br>
+      Для работы сайта нужен JavaScript. Пожалуйста, включите его в браузере.<br>
+      Sayt ishlashi uchun JavaScript kerak. Iltimos, uni brauzerda yoqing.
+    </p>
+  </noscript>
+
+  <script src="features.js"></script>
+  <script src="js/safe.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/features/payments.js"></script>
+  <script src="js/features/escrow.js"></script>
+  <script src="js/features/idcheck.js"></script>
+  <script src="js/features/calls.js"></script>
+  <script src="js/features/sms.js"></script>
+  <script src="js/features/email.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+
+  <script>
+    (function () {
+      var IO = window.InAndOut;
+
+      /* One line of the details list: label on the left, value on the right. */
+      function row(labelKey, labelFallback, valueText) {
+        var item = IO.el('li');
+        item.appendChild(IO.tEl('span', 'muted', labelKey, labelFallback));
+        item.appendChild(IO.el('strong', '', valueText));
+        return item;
+      }
+
+      function buildProfile(worker, box) {
+        var D = IO.data;
+
+        var back = IO.el('a', 'back-link');
+        back.setAttribute('href', 'browse.html');
+        back.appendChild(document.createTextNode('← '));
+        back.appendChild(IO.tEl('span', '', 'gig.back', 'Back to all gigs'));
+        box.appendChild(back);
+
+        /* SAFETY STEP (later): the "Report" and "I feel unsafe" buttons, and the
+           rules about who may see this profile, will be added here. */
+
+        var layout = IO.el('div', 'gig-layout');
+        var main = IO.el('div', 'stack');
+        var side = IO.el('div', 'stack');
+
+        /* ----- Header card: avatar, name, status, city ----- */
+        var head = IO.el('div', 'card profile-head');
+        head.appendChild(IO.el('div', 'avatar', D.initials(worker.name)));
+        var info = IO.el('div');
+        info.appendChild(IO.el('h1', '', worker.name));
+        info.appendChild(IO.ui.statusChip(worker.status));
+        info.appendChild(document.createTextNode(' '));
+        info.appendChild(IO.ui.sampleBadge());
+        var cityLine = IO.el('p', 'muted',
+          IO.t('profile.city', 'City') + ': ' + IO.t('city.' + worker.city, worker.city));
+        cityLine.style.marginTop = '8px';
+        cityLine.style.marginBottom = '0';
+        info.appendChild(cityLine);
+        head.appendChild(info);
+        main.appendChild(head);
+
+        /* ----- About, skills, languages ----- */
+        var about = IO.el('div', 'card');
+        about.appendChild(IO.tEl('h2', '', 'profile.about', 'About'));
+        about.appendChild(IO.el('p', '', IO.pick(worker.bio)));
+
+        about.appendChild(IO.tEl('h3', '', 'profile.skills', 'Skills'));
+        var skills = IO.el('div', 'gig-meta');
+        for (var s = 0; s < worker.skills.length; s++) {
+          skills.appendChild(IO.tEl('span', 'badge', 'cat.' + worker.skills[s]));
+        }
+        about.appendChild(skills);
+
+        var langHeading = IO.tEl('h3', '', 'profile.languages', 'Languages');
+        langHeading.style.marginTop = '16px';
+        about.appendChild(langHeading);
+        var names = [];
+        for (var l = 0; l < worker.languages.length; l++) {
+          names.push(D.languageNames[worker.languages[l]] || worker.languages[l]);
+        }
+        about.appendChild(IO.el('p', '', names.join(', ')));
+        main.appendChild(about);
+
+        /* ----- This worker's gigs ----- */
+        var gigsBlock = IO.el('div');
+        gigsBlock.appendChild(IO.tEl('h2', '', 'profile.gigs', 'Gigs by this worker'));
+        var gigs = D.gigsOfWorker(worker.id);
+        if (gigs.length === 0) {
+          gigsBlock.appendChild(IO.emptyBox('📋', 'profile.gigs.empty.title', 'profile.gigs.empty.text'));
+        } else {
+          var grid = IO.el('div', 'grid grid-2');
+          for (var g = 0; g < gigs.length; g++) { grid.appendChild(IO.ui.gigCard(gigs[g])); }
+          gigsBlock.appendChild(grid);
+        }
+        main.appendChild(gigsBlock);
+
+        /* ----- Reviews (all sample) ----- */
+        var reviewsBlock = IO.el('div');
+        reviewsBlock.appendChild(IO.tEl('h2', '', 'profile.reviews', 'Reviews (sample)'));
+        var reviews = D.reviewsOfWorker(worker.id);
+        if (reviews.length === 0) {
+          reviewsBlock.appendChild(IO.emptyBox('⭐', 'profile.reviews.empty.title', 'profile.reviews.empty.text'));
+        } else {
+          var list = IO.el('div', 'stack');
+          for (var r = 0; r < reviews.length; r++) {
+            var review = reviews[r];
+            var card = IO.el('div', 'card');
+
+            var stars = '';
+            for (var k = 0; k < 5; k++) { stars += (k < review.rating) ? '★' : '☆'; }
+            var starLine = IO.el('p', '', stars);
+            starLine.style.color = '#8a5200';
+            starLine.style.margin = '0 0 6px';
+            starLine.setAttribute('aria-label', review.rating + ' / 5');
+            card.appendChild(starLine);
+
+            card.appendChild(IO.el('p', '', IO.pick(review.text)));
+            var by = IO.el('p', 'muted', review.author + ' ');
+            by.appendChild(IO.ui.sampleBadge());
+            card.appendChild(by);
+            list.appendChild(card);
+          }
+          reviewsBlock.appendChild(list);
+        }
+        main.appendChild(reviewsBlock);
+
+        /* ----- Side column: verification, numbers, actions ----- */
+        var verification = IO.el('div', 'card');
+        verification.appendChild(IO.tEl('h3', '', 'profile.verification', 'Verification status'));
+        verification.appendChild(IO.ui.statusChip(worker.status));
+        verification.appendChild(document.createTextNode(' '));
+        verification.appendChild(IO.ui.sampleBadge());
+        var statusText = IO.tEl('p', 'muted', 'status.' + worker.status + '.text');
+        statusText.style.marginTop = '12px';
+        statusText.style.marginBottom = '0';
+        verification.appendChild(statusText);
+        side.appendChild(verification);
+
+        var numbers = IO.el('div', 'card');
+        var numberList = IO.el('ul', 'detail-list');
+        numberList.appendChild(row('profile.rating', 'Rating (sample)',
+          worker.rating === null ? '-' : worker.rating + ' / 5'));
+        numberList.appendChild(row('profile.jobs', 'Jobs done (sample)', String(worker.jobs)));
+        numbers.appendChild(numberList);
+        side.appendChild(numbers);
+
+        var actions = IO.el('div', 'card');
+        actions.appendChild(IO.tEl('h3', '', 'gig.actions', 'Next steps'));
+        var stack = IO.el('div', 'action-stack');
+
+        var message = IO.tEl('button', 'btn btn-primary btn-block', 'common.sendMessage', 'Send a message');
+        message.setAttribute('type', 'button');
+        message.addEventListener('click', IO.safe(function () {
+          IO.showMessage(IO.t('demo.notice', 'Demo only: nothing is saved or sent.'));
+        }));
+        stack.appendChild(message);
+
+        var call = IO.tEl('button', 'btn btn-outline btn-block', 'gig.call', 'Audio call');
+        call.setAttribute('type', 'button');
+        call.setAttribute('data-feature', 'audioCalls');
+        stack.appendChild(call);
+        actions.appendChild(stack);
+
+        var tip = IO.tEl('div', 'notice', 'gig.safetyTip',
+          'Safety tip: agree on the details in writing and never share passwords or codes.');
+        tip.style.marginTop = '16px';
+        tip.style.marginBottom = '0';
+        actions.appendChild(tip);
+        side.appendChild(actions);
+
+        layout.appendChild(main);
+        layout.appendChild(side);
+        box.appendChild(layout);
+      }
+
+      function render() {
+        var box = document.getElementById('profile-box');
+        try {
+          if (!IO.data || !IO.ui) { throw new Error('Sample data is missing'); }
+          IO.clear(box);
+
+          var id = IO.param('id');
+          var worker = id ? IO.data.getWorker(id) : null;
+
+          if (!worker) {
+            box.appendChild(IO.emptyBox('🧭', 'profile.notFound.title', 'profile.notFound.text',
+              'browse.html', 'common.browseGigs'));
+            return;
+          }
+
+          buildProfile(worker, box);
+          document.title = worker.name + ' | In&Out';
+        } catch (err) {
+          IO.clear(box);
+          box.appendChild(IO.el('div', 'notice notice-error', IO.t('error.load')));
+          IO.reportError(err, 'error.load');
+        }
+      }
+
+      render();
+      document.addEventListener('inandout:langchange', render);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="title.browse">Browse gigs | In&Out</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="browse">
+  <div id="site-header"></div>
+
+  <main id="main" class="section">
+    <div class="container">
+      <h1 data-i18n="browse.title">Browse gigs</h1>
+      <p class="muted" data-i18n="browse.intro">Search and filter. All gigs below are sample data.</p>
+
+      <div class="browse-layout">
+
+        <form id="filter-form" class="filters" novalidate>
+          <details id="filters-box" class="card filters-box" open>
+            <summary data-i18n="browse.filters">Filters</summary>
+
+            <div class="form-row">
+              <label for="f-search" data-i18n="browse.search.label">Search</label>
+              <input id="f-search" type="search" autocomplete="off"
+                     data-i18n-placeholder="browse.search.placeholder"
+                     placeholder="For example: cleaning, English, logo">
+            </div>
+
+            <div class="form-row">
+              <label for="f-category" data-i18n="browse.category">Category</label>
+              <select id="f-category">
+                <option value="" data-i18n="common.all">All</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="f-mode" data-i18n="browse.mode">Type</label>
+              <select id="f-mode">
+                <option value="" data-i18n="common.all">All</option>
+                <option value="online" data-i18n="common.online">Online</option>
+                <option value="inperson" data-i18n="common.inPerson">In person</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="f-city" data-i18n="browse.city">City</label>
+              <select id="f-city">
+                <option value="" data-i18n="city.any">Any city</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="f-max" data-i18n="browse.maxPrice">Maximum price (UZS)</label>
+              <input id="f-max" type="number" inputmode="numeric" min="1" step="1000">
+              <p id="max-error" class="field-error hidden" data-i18n="form.number">Please enter a number greater than 0.</p>
+            </div>
+
+            <div class="form-row">
+              <label for="f-sort" data-i18n="browse.sort">Sort by</label>
+              <select id="f-sort">
+                <option value="new" data-i18n="browse.sort.new">Newest first</option>
+                <option value="low" data-i18n="browse.sort.low">Price: low to high</option>
+                <option value="high" data-i18n="browse.sort.high">Price: high to low</option>
+              </select>
+            </div>
+
+            <button type="button" id="f-reset" class="btn btn-outline btn-block" data-i18n="common.reset">Clear filters</button>
+          </details>
+        </form>
+
+        <section aria-live="polite">
+          <p id="count" class="results-count"></p>
+          <div id="results" class="grid grid-2"></div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <noscript>
+    <p class="notice notice-error" style="margin:16px">
+      This site needs JavaScript. Please switch it on in your browser.<br>
+      Для работы сайта нужен JavaScript. Пожалуйста, включите его в браузере.<br>
+      Sayt ishlashi uchun JavaScript kerak. Iltimos, uni brauzerda yoqing.
+    </p>
+  </noscript>
+
+  <script src="features.js"></script>
+  <script src="js/safe.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/features/payments.js"></script>
+  <script src="js/features/escrow.js"></script>
+  <script src="js/features/idcheck.js"></script>
+  <script src="js/features/calls.js"></script>
+  <script src="js/features/sms.js"></script>
+  <script src="js/features/email.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+
+  <script>
+    (function () {
+      var IO = window.InAndOut;
+      var LANGS = ['en', 'ru', 'uz'];
+
+      function $(id) { return document.getElementById(id); }
+
+      /* Fill a drop-down list with options (their text follows the language). */
+      function addOptions(select, items, prefix) {
+        for (var i = 0; i < items.length; i++) {
+          var option = IO.tEl('option', '', prefix + items[i].id);
+          option.value = items[i].id;
+          select.appendChild(option);
+        }
+      }
+
+      /* Choose an option; if the value does not exist, fall back to the first one. */
+      function setSelect(select, value) {
+        select.value = value;
+        if (select.selectedIndex < 0) { select.selectedIndex = 0; }
+      }
+
+      /* All the words of a gig in all 3 languages, so search works in any language. */
+      function haystack(gig) {
+        var parts = [];
+        var worker = IO.data.getWorker(gig.workerId);
+        for (var i = 0; i < LANGS.length; i++) {
+          var l = LANGS[i];
+          var tr = (IO.translations && IO.translations[l]) || {};
+          parts.push((gig.title && gig.title[l]) || '');
+          parts.push((gig.desc && gig.desc[l]) || '');
+          parts.push(tr['cat.' + gig.category] || '');
+          parts.push(gig.city !== 'any' ? (tr['city.' + gig.city] || '') : '');
+          parts.push(tr[gig.mode === 'online' ? 'common.online' : 'common.inPerson'] || '');
+        }
+        parts.push(worker ? worker.name : '');
+        return parts.join(' ').toLowerCase();
+      }
+
+      /* Read the price box. Empty is fine. Zero, negative or not a number is an error. */
+      function readMax() {
+        var raw = $('f-max').value.trim();
+        if (raw === '') { return { value: null, error: false }; }
+        var n = Number(raw);
+        if (!isFinite(n) || n <= 0) { return { value: null, error: true }; }
+        return { value: n, error: false };
+      }
+
+      function readFilters() {
+        var max = readMax();
+        return {
+          q: $('f-search').value.trim().toLowerCase(),
+          category: $('f-category').value,
+          mode: $('f-mode').value,
+          city: $('f-city').value,
+          sort: $('f-sort').value || 'new',
+          max: max.value,
+          maxError: max.error
+        };
+      }
+
+      function applyFilters(f) {
+        var terms = f.q ? f.q.split(/\s+/) : [];
+        var list = [];
+        for (var i = 0; i < IO.data.gigs.length; i++) {
+          var g = IO.data.gigs[i];
+          if (f.category && g.category !== f.category) { continue; }
+          if (f.mode && g.mode !== f.mode) { continue; }
+          /* Online gigs (city "any") appear in every city search. */
+          if (f.city && g.city !== 'any' && g.city !== f.city) { continue; }
+          if (f.max !== null && g.price > f.max) { continue; }
+          if (terms.length) {
+            var text = haystack(g);
+            var all = true;
+            for (var t = 0; t < terms.length; t++) {
+              if (text.indexOf(terms[t]) === -1) { all = false; break; }
+            }
+            if (!all) { continue; }
+          }
+          list.push(g);
+        }
+        list.sort(function (a, b) {
+          if (f.sort === 'low') { return a.price - b.price; }
+          if (f.sort === 'high') { return b.price - a.price; }
+          return a.posted < b.posted ? 1 : (a.posted > b.posted ? -1 : 0);
+        });
+        return list;
+      }
+
+      function resetFilters() {
+        $('f-search').value = '';
+        $('f-max').value = '';
+        $('f-category').selectedIndex = 0;
+        $('f-mode').selectedIndex = 0;
+        $('f-city').selectedIndex = 0;
+        $('f-sort').selectedIndex = 0;
+        render();
+      }
+
+      function render() {
+        var out = $('results');
+        var count = $('count');
+        try {
+          if (!IO.data || !IO.data.gigs || !IO.ui) { throw new Error('Sample data is missing'); }
+          var f = readFilters();
+          if (f.maxError) { $('max-error').classList.remove('hidden'); }
+          else { $('max-error').classList.add('hidden'); }
+
+          var list = applyFilters(f);
+          IO.clear(out);
+          count.textContent = IO.t('browse.count', 'Gigs found: {n}', { n: list.length });
+
+          if (list.length === 0) {
+            out.className = '';
+            var box = IO.emptyBox('🔍', 'browse.empty.title', 'browse.empty.text');
+            var reset = IO.tEl('button', 'btn btn-outline', 'common.reset', 'Clear filters');
+            reset.setAttribute('type', 'button');
+            reset.addEventListener('click', IO.safe(resetFilters));
+            box.appendChild(reset);
+            out.appendChild(box);
+          } else {
+            out.className = 'grid grid-2';
+            for (var i = 0; i < list.length; i++) { out.appendChild(IO.ui.gigCard(list[i])); }
+          }
+        } catch (err) {
+          IO.clear(out);
+          out.className = '';
+          count.textContent = '';
+          out.appendChild(IO.el('div', 'notice notice-error', IO.t('browse.error')));
+          IO.reportError(err, 'browse.error');
+        }
+      }
+
+      function start() {
+        try {
+          addOptions($('f-category'), IO.data.categories, 'cat.');
+          addOptions($('f-city'), IO.data.cities, 'city.');
+
+          /* Start from the page address, for example browse.html?category=design */
+          var q = IO.param('q');
+          if (q) { $('f-search').value = q; }
+          setSelect($('f-category'), IO.param('category'));
+          setSelect($('f-mode'), IO.param('mode'));
+          setSelect($('f-city'), IO.param('city'));
+          setSelect($('f-sort'), IO.param('sort'));
+          var max = Number(IO.param('max'));
+          if (max > 0) { $('f-max').value = String(max); }
+
+          /* On phones the filters start folded away. */
+          $('filters-box').open = window.innerWidth >= 960;
+        } catch (err) {
+          IO.reportError(err, 'browse.error');
+        }
+
+        $('filter-form').addEventListener('submit', function (event) {
+          event.preventDefault();
+          render();
+        });
+        $('f-search').addEventListener('input', render);
+        $('f-max').addEventListener('input', render);
+        $('f-category').addEventListener('change', render);
+        $('f-mode').addEventListener('change', render);
+        $('f-city').addEventListener('change', render);
+        $('f-sort').addEventListener('change', render);
+        $('f-reset').addEventListener('click', IO.safe(resetFilters));
+        document.addEventListener('inandout:langchange', render);
+
+        render();
+      }
+
+      start();
+    })();
+  </script>
+</body>
+</html>

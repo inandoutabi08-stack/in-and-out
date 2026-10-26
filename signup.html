@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="title.signup">Sign up | In&Out</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="signup">
+  <div id="site-header"></div>
+
+  <main id="main" class="section">
+    <div class="container" style="max-width:560px">
+      <h1 data-i18n="auth.signup.title">Create your account</h1>
+      <p class="muted" data-i18n="auth.signup.intro">It takes about a minute. Women and men are both welcome.</p>
+      <div class="notice" data-i18n="auth.demo">Design only. No account is created and nothing is sent.</div>
+
+      <div id="load-error" class="notice notice-error hidden" data-i18n="error.load">We could not load this page properly. Please refresh the page or go back to the home page.</div>
+
+      <form id="signup-form" class="card" novalidate>
+        <div id="form-error" class="notice notice-error hidden" role="alert" data-i18n="post.fix">Please fix the fields marked in red.</div>
+        <div id="form-success" class="notice notice-success hidden" role="status" data-i18n="auth.done" style="scroll-margin-top:140px">Demo only: no account was created.</div>
+
+        <div class="form-row">
+          <label for="f-name" data-i18n="auth.name">Full name</label>
+          <input id="f-name" type="text" autocomplete="name">
+          <p id="err-name" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-phone" data-i18n="auth.phone">Phone number</label>
+          <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67">
+          <p id="err-phone" class="field-error hidden"></p>
+          <button type="button" class="btn btn-outline btn-small" style="margin-top:10px"
+                  data-feature="smsVerification" data-i18n="auth.sms">Send me an SMS code</button>
+        </div>
+
+        <div class="form-row">
+          <label for="f-email" data-i18n="auth.email">Email (optional)</label>
+          <input id="f-email" type="email" autocomplete="email">
+          <p id="err-email" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-password" data-i18n="auth.password">Password</label>
+          <input id="f-password" type="password" autocomplete="new-password">
+          <p id="err-password" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-password2" data-i18n="auth.password2">Repeat password</label>
+          <input id="f-password2" type="password" autocomplete="new-password">
+          <p id="err-password2" class="field-error hidden"></p>
+        </div>
+
+        <!-- COMPANY STEP (later): a third account type, "Company", will be added to this list. -->
+        <div class="form-row">
+          <label for="f-role" data-i18n="auth.role">I want to</label>
+          <select id="f-role">
+            <option value="">&mdash;</option>
+            <option value="client" data-i18n="auth.role.client">Hire workers</option>
+            <option value="worker" data-i18n="auth.role.worker">Offer my services</option>
+            <option value="both" data-i18n="auth.role.both">Both</option>
+          </select>
+          <p id="err-role" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <div class="check-row">
+            <input id="f-agree" type="checkbox">
+            <label for="f-agree" data-i18n="auth.agree">I agree to the terms and privacy text. DRAFT: needs lawyer review.</label>
+          </div>
+          <p id="err-agree" class="field-error hidden"></p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" data-i18n="auth.signup.submit">Sign up</button>
+      </form>
+
+      <p class="center" style="margin-top:18px">
+        <span data-i18n="auth.haveAccount">Already have an account?</span>
+        <a href="login.html" data-i18n="nav.login">Log in</a>
+      </p>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <noscript>
+    <p class="notice notice-error" style="margin:16px">
+      This site needs JavaScript. Please switch it on in your browser.<br>
+      Для работы сайта нужен JavaScript. Пожалуйста, включите его в браузере.<br>
+      Sayt ishlashi uchun JavaScript kerak. Iltimos, uni brauzerda yoqing.
+    </p>
+  </noscript>
+
+  <script src="features.js"></script>
+  <script src="js/safe.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/features/payments.js"></script>
+  <script src="js/features/escrow.js"></script>
+  <script src="js/features/idcheck.js"></script>
+  <script src="js/features/calls.js"></script>
+  <script src="js/features/sms.js"></script>
+  <script src="js/features/email.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/forms.js"></script>
+
+  <script>
+    (function () {
+      var IO = window.InAndOut;
+      var F = IO.forms;
+
+      function $(id) { return document.getElementById(id); }
+
+      function onSubmit(event) {
+        event.preventDefault();
+        var c = F.checker();
+
+        var phone = $('f-phone').value.trim();
+        var email = $('f-email').value.trim();
+        var pass = $('f-password').value;
+        var pass2 = $('f-password2').value;
+
+        c.check('name', $('f-name').value.trim() !== '', 'form.required');
+        c.check('phone', F.isPhone(phone), 'form.phone');
+        c.check('email', email === '' || F.isEmail(email), 'form.email');
+        c.check('password', pass.length >= 8, 'form.passwordShort');
+        c.check('password2', pass2 !== '' && pass2 === pass,
+          pass2 === '' ? 'form.required' : 'form.passwordMatch');
+        c.check('role', $('f-role').value !== '', 'form.choose');
+        c.check('agree', $('f-agree').checked, 'form.agree');
+
+        if (c.firstBad()) {
+          F.toggle('form-error', true);
+          F.toggle('form-success', false);
+          F.focusField(c.firstBad());
+          return;
+        }
+
+        /* Nothing is saved and nothing is sent. This is a design demo. */
+        F.toggle('form-error', false);
+        F.toggle('form-success', true);
+        try { $('form-success').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* ignore */ }
+      }
+
+      if (!F) {
+        $('load-error').classList.remove('hidden');
+      } else {
+        $('signup-form').addEventListener('submit', IO.safe(onSubmit));
+      }
+    })();
+  </script>
+</body>
+</html>

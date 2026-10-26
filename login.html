@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="title.login">Log in | In&Out</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="login">
+  <div id="site-header"></div>
+
+  <main id="main" class="section">
+    <div class="container" style="max-width:560px">
+      <h1 data-i18n="auth.login.title">Log in</h1>
+      <p class="muted" data-i18n="auth.login.intro">Welcome back.</p>
+      <div class="notice" data-i18n="auth.demo">Design only. No account is created and nothing is sent.</div>
+
+      <div id="load-error" class="notice notice-error hidden" data-i18n="error.load">We could not load this page properly. Please refresh the page or go back to the home page.</div>
+
+      <form id="login-form" class="card" novalidate>
+        <div id="form-error" class="notice notice-error hidden" role="alert" data-i18n="post.fix">Please fix the fields marked in red.</div>
+        <div id="form-success" class="notice notice-success hidden" role="status" data-i18n="auth.done.login" style="scroll-margin-top:140px">Demo only: nobody was logged in.</div>
+
+        <div class="form-row">
+          <label for="f-id" data-i18n="auth.login.id">Phone or email</label>
+          <input id="f-id" type="text" autocomplete="username">
+          <p id="err-id" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-password" data-i18n="auth.password">Password</label>
+          <input id="f-password" type="password" autocomplete="current-password">
+          <p id="err-password" class="field-error hidden"></p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" data-i18n="auth.login.submit">Log in</button>
+
+        <p class="center" style="margin:16px 0 0">
+          <a href="#" id="forgot" data-i18n="auth.forgot">Forgot your password?</a>
+        </p>
+      </form>
+
+      <p class="center" style="margin-top:18px">
+        <span data-i18n="auth.noAccount">New here?</span>
+        <a href="signup.html" data-i18n="nav.signup">Sign up</a>
+      </p>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <noscript>
+    <p class="notice notice-error" style="margin:16px">
+      This site needs JavaScript. Please switch it on in your browser.<br>
+      Для работы сайта нужен JavaScript. Пожалуйста, включите его в браузере.<br>
+      Sayt ishlashi uchun JavaScript kerak. Iltimos, uni brauzerda yoqing.
+    </p>
+  </noscript>
+
+  <script src="features.js"></script>
+  <script src="js/safe.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/features/payments.js"></script>
+  <script src="js/features/escrow.js"></script>
+  <script src="js/features/idcheck.js"></script>
+  <script src="js/features/calls.js"></script>
+  <script src="js/features/sms.js"></script>
+  <script src="js/features/email.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/forms.js"></script>
+
+  <script>
+    (function () {
+      var IO = window.InAndOut;
+      var F = IO.forms;
+
+      function $(id) { return document.getElementById(id); }
+
+      function onSubmit(event) {
+        event.preventDefault();
+        var c = F.checker();
+        c.check('id', $('f-id').value.trim() !== '', 'form.required');
+        c.check('password', $('f-password').value !== '', 'form.required');
+
+        if (c.firstBad()) {
+          F.toggle('form-error', true);
+          F.toggle('form-success', false);
+          F.focusField(c.firstBad());
+          return;
+        }
+
+        /* Nobody is really logged in. This is a design demo. */
+        F.toggle('form-error', false);
+        F.toggle('form-success', true);
+      }
+
+      if (!F) {
+        $('load-error').classList.remove('hidden');
+      } else {
+        $('login-form').addEventListener('submit', IO.safe(onSubmit));
+        $('forgot').addEventListener('click', IO.safe(function (event) {
+          event.preventDefault();
+          IO.showMessage(IO.t('demo.notice', 'Demo only: nothing is saved or sent.'));
+        }));
+      }
+    })();
+  </script>
+</body>
+</html>
