@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="title.post">Post a gig | In&Out</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="post">
+  <div id="site-header"></div>
+
+  <main id="main" class="section">
+    <div class="container" style="max-width:760px">
+      <h1 data-i18n="post.title">Post a gig</h1>
+      <p class="muted" data-i18n="post.intro">Describe what you offer. This is a design demo: nothing is saved or published.</p>
+
+      <div id="load-error" class="notice notice-error hidden" data-i18n="error.load">We could not load this page properly. Please refresh the page or go back to the home page.</div>
+
+      <!-- SAFETY STEP (later): the blocked-jobs check, the public meeting place field
+           and the safety warnings will be added to this form. -->
+
+      <form id="post-form" class="card" novalidate>
+        <div id="form-error" class="notice notice-error hidden" role="alert" data-i18n="post.fix">Please fix the fields marked in red.</div>
+
+        <div class="form-row">
+          <label for="f-title" data-i18n="post.f.title">Gig title</label>
+          <input id="f-title" type="text" maxlength="80" autocomplete="off">
+          <p class="field-help" data-i18n="post.f.title.help">Short and clear, for example: Home cleaning, 3 hours</p>
+          <p id="err-title" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-category" data-i18n="post.f.category">Category</label>
+          <select id="f-category">
+            <option value="">&mdash;</option>
+          </select>
+          <p id="err-category" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-mode" data-i18n="post.f.mode">Where is the work done?</label>
+          <select id="f-mode">
+            <option value="">&mdash;</option>
+            <option value="online" data-i18n="common.online">Online</option>
+            <option value="inperson" data-i18n="common.inPerson">In person</option>
+          </select>
+          <p id="err-mode" class="field-error hidden"></p>
+        </div>
+
+        <div id="row-city" class="form-row hidden">
+          <label for="f-city" data-i18n="post.f.city">City</label>
+          <select id="f-city">
+            <option value="">&mdash;</option>
+          </select>
+          <p id="err-city" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-desc" data-i18n="post.f.desc">Description</label>
+          <textarea id="f-desc" maxlength="600"></textarea>
+          <p class="field-help" data-i18n="post.f.desc.help">What is included? What do you need from the client?</p>
+          <p id="err-desc" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-price" data-i18n="post.f.price">Price (UZS)</label>
+          <input id="f-price" type="number" inputmode="numeric" min="1" step="1000">
+          <p id="err-price" class="field-error hidden"></p>
+        </div>
+
+        <div class="form-row">
+          <label for="f-unit" data-i18n="post.f.unit">Price type</label>
+          <select id="f-unit">
+            <option value="fixed" data-i18n="common.fixedPrice">fixed price</option>
+            <option value="hour" data-i18n="common.perHour">per hour</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="f-days" data-i18n="post.f.days">Delivery time (days)</label>
+          <input id="f-days" type="number" inputmode="numeric" min="1" max="60" step="1">
+          <p id="err-days" class="field-error hidden"></p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" data-i18n="post.submit">Preview my gig</button>
+      </form>
+
+      <div id="preview" class="hidden" style="margin-top:24px; scroll-margin-top:140px"></div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <noscript>
+    <p class="notice notice-error" style="margin:16px">
+      This site needs JavaScript. Please switch it on in your browser.<br>
+      Для работы сайта нужен JavaScript. Пожалуйста, включите его в браузере.<br>
+      Sayt ishlashi uchun JavaScript kerak. Iltimos, uni brauzerda yoqing.
+    </p>
+  </noscript>
+
+  <script src="features.js"></script>
+  <script src="js/safe.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/features/payments.js"></script>
+  <script src="js/features/escrow.js"></script>
+  <script src="js/features/idcheck.js"></script>
+  <script src="js/features/calls.js"></script>
+  <script src="js/features/sms.js"></script>
+  <script src="js/features/email.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+
+  <script>
+    (function () {
+      var IO = window.InAndOut;
+      var lastGig = null;
+
+      function $(id) { return document.getElementById(id); }
+
+      function addOptions(select, items, prefix) {
+        for (var i = 0; i < items.length; i++) {
+          var option = IO.tEl('option', '', prefix + items[i].id);
+          option.value = items[i].id;
+          select.appendChild(option);
+        }
+      }
+
+      /* Show (key given) or clear (key empty) the red message under a field. */
+      function setError(id, key) {
+        var message = $('err-' + id);
+        var field = $('f-' + id);
+        if (key) {
+          message.setAttribute('data-i18n', key);
+          message.textContent = IO.t(key);
+          message.classList.remove('hidden');
+          field.setAttribute('aria-invalid', 'true');
+          field.style.borderColor = '#9b1c1c';
+        } else {
+          message.removeAttribute('data-i18n');
+          message.textContent = '';
+          message.classList.add('hidden');
+          field.removeAttribute('aria-invalid');
+          field.style.borderColor = '';
+        }
+      }
+
+      /* Check every field. Returns the id of the first wrong field, or '' if all is fine. */
+      function validate() {
+        var firstBad = '';
+        function check(id, ok, key) {
+          if (ok) {
+            setError(id, '');
+          } else {
+            setError(id, key);
+            if (!firstBad) { firstBad = id; }
+          }
+        }
+
+        var mode = $('f-mode').value;
+        var priceText = $('f-price').value.trim();
+        var price = Number(priceText);
+        var daysText = $('f-days').value.trim();
+        var days = Number(daysText);
+
+        check('title', $('f-title').value.trim() !== '', 'form.required');
+        check('category', $('f-category').value !== '', 'form.choose');
+        check('mode', mode !== '', 'form.choose');
+        check('city', mode !== 'inperson' || $('f-city').value !== '', 'form.choose');
+        check('desc', $('f-desc').value.trim() !== '', 'form.required');
+        check('price', priceText !== '' && isFinite(price) && price > 0, 'form.number');
+        check('days', daysText !== '' && isFinite(days) && days >= 1 && days <= 60 &&
+          Math.floor(days) === days, 'form.number');
+        return firstBad;
+      }
+
+      /* The City field is only needed for in-person gigs. */
+      function updateCityRow() {
+        if ($('f-mode').value === 'inperson') { $('row-city').classList.remove('hidden'); }
+        else { $('row-city').classList.add('hidden'); }
+      }
+
+      function showPreview(gig) {
+        var box = $('preview');
+        IO.clear(box);
+        if (!gig) { box.classList.add('hidden'); return; }
+        box.classList.remove('hidden');
+
+        box.appendChild(IO.tEl('h2', '', 'post.preview.title', 'Your gig preview'));
+
+        var card = IO.ui.gigCard(gig);
+        /* The links inside a preview must not go anywhere. */
+        var links = card.querySelectorAll('a');
+        for (var i = 0; i < links.length; i++) {
+          links[i].addEventListener('click', function (event) { event.preventDefault(); });
+        }
+        box.appendChild(card);
+
+        var ok = IO.tEl('div', 'notice notice-success', 'post.success',
+          'Looks good! This is a demo, so your gig was not saved or published.');
+        ok.style.marginTop = '16px';
+        box.appendChild(ok);
+      }
+
+      function onSubmit(event) {
+        event.preventDefault();
+        var bad = validate();
+
+        if (bad) {
+          $('form-error').classList.remove('hidden');
+          lastGig = null;
+          showPreview(null);
+          try { $('f-' + bad).focus(); } catch (e) { /* ignore */ }
+          return;
+        }
+
+        $('form-error').classList.add('hidden');
+        var mode = $('f-mode').value;
+        var title = $('f-title').value.trim();
+        var description = $('f-desc').value.trim();
+
+        /* Nothing is saved. We only build a temporary gig to draw the preview. */
+        lastGig = {
+          id: 'preview', sample: true, workerId: '',
+          category: $('f-category').value, mode: mode,
+          city: mode === 'inperson' ? $('f-city').value : 'any',
+          price: Number($('f-price').value), unit: $('f-unit').value,
+          days: Number($('f-days').value), posted: '',
+          title: { en: title, ru: title, uz: title },
+          desc: { en: description, ru: description, uz: description }
+        };
+        showPreview(lastGig);
+        try { $('preview').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e2) { /* ignore */ }
+      }
+
+      function start() {
+        try {
+          if (!IO.data || !IO.ui) { throw new Error('Sample data is missing'); }
+          addOptions($('f-category'), IO.data.categories, 'cat.');
+          addOptions($('f-city'), IO.data.cities, 'city.');
+        } catch (err) {
+          $('load-error').classList.remove('hidden');
+          IO.reportError(err, 'error.load');
+        }
+
+        updateCityRow();
+        $('f-mode').addEventListener('change', updateCityRow);
+        $('post-form').addEventListener('submit', IO.safe(onSubmit));
+        document.addEventListener('inandout:langchange', function () {
+          if (lastGig) { showPreview(lastGig); }
+        });
+      }
+
+      start();
+    })();
+  </script>
+</body>
+</html>

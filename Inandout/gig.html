@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="title.gig">Gig details | In&Out</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="gig">
+  <div id="site-header"></div>
+
+  <main id="main" class="section">
+    <div class="container" id="gig-box"></div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <noscript>
+    <p class="notice notice-error" style="margin:16px">
+      This site needs JavaScript. Please switch it on in your browser.<br>
+      Для работы сайта нужен JavaScript. Пожалуйста, включите его в браузере.<br>
+      Sayt ishlashi uchun JavaScript kerak. Iltimos, uni brauzerda yoqing.
+    </p>
+  </noscript>
+
+  <script src="features.js"></script>
+  <script src="js/safe.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/features/payments.js"></script>
+  <script src="js/features/escrow.js"></script>
+  <script src="js/features/idcheck.js"></script>
+  <script src="js/features/calls.js"></script>
+  <script src="js/features/sms.js"></script>
+  <script src="js/features/email.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui.js"></script>
+
+  <script>
+    (function () {
+      var IO = window.InAndOut;
+
+      /* One line of the details list: label on the left, value on the right. */
+      function row(labelKey, labelFallback, valueText) {
+        var item = IO.el('li');
+        item.appendChild(IO.tEl('span', 'muted', labelKey, labelFallback));
+        item.appendChild(IO.el('strong', '', valueText));
+        return item;
+      }
+
+      function featureButton(className, key, fallback, feature) {
+        var button = IO.tEl('button', className, key, fallback);
+        button.setAttribute('type', 'button');
+        button.setAttribute('data-feature', feature);
+        return button;
+      }
+
+      function buildGig(gig, box) {
+        var worker = IO.data.getWorker(gig.workerId);
+
+        var back = IO.el('a', 'back-link');
+        back.setAttribute('href', 'browse.html');
+        back.appendChild(document.createTextNode('← '));
+        back.appendChild(IO.tEl('span', '', 'gig.back', 'Back to all gigs'));
+        box.appendChild(back);
+
+        /* SAFETY STEP (later): a safety box for every gig goes here, at the top of the page. */
+
+        var layout = IO.el('div', 'gig-layout');
+        var main = IO.el('div', 'stack');
+        var side = IO.el('div', 'stack');
+
+        /* ----- Main column: the gig itself ----- */
+        var card = IO.el('div', 'card');
+
+        var meta = IO.el('div', 'gig-meta');
+        meta.appendChild(IO.tEl('span',
+          'badge ' + (gig.mode === 'online' ? 'badge-online' : 'badge-inperson'),
+          gig.mode === 'online' ? 'common.online' : 'common.inPerson'));
+        meta.appendChild(IO.tEl('span', 'badge', 'cat.' + gig.category));
+        if (gig.city && gig.city !== 'any') {
+          meta.appendChild(IO.tEl('span', 'badge', 'city.' + gig.city));
+        }
+        meta.appendChild(IO.ui.sampleBadge());
+        card.appendChild(meta);
+
+        card.appendChild(IO.el('h1', 'gig-hero-title', IO.pick(gig.title)));
+        card.appendChild(IO.tEl('h2', '', 'gig.about', 'About this gig'));
+        card.appendChild(IO.el('p', '', IO.pick(gig.desc)));
+
+        var list = IO.el('ul', 'detail-list');
+        list.appendChild(row('gig.price', 'Price', IO.ui.priceText(gig)));
+        list.appendChild(row('gig.delivery', 'Delivery time',
+          IO.t('common.upToDays', 'Up to {n} days', { n: gig.days })));
+        list.appendChild(row('gig.type', 'Type',
+          IO.t(gig.mode === 'online' ? 'common.online' : 'common.inPerson')));
+        list.appendChild(row('gig.city', 'City', IO.t('city.' + gig.city, 'City')));
+        card.appendChild(list);
+        main.appendChild(card);
+
+        /* ----- Side column: the worker and the next steps ----- */
+        var workerCard = IO.el('div', 'card');
+        workerCard.appendChild(IO.tEl('h3', '', 'gig.offeredBy', 'Offered by'));
+        if (worker) {
+          var head = IO.el('div', 'profile-head');
+          head.appendChild(IO.el('div', 'avatar', IO.data.initials(worker.name)));
+          var info = IO.el('div');
+          var nameBox = IO.el('strong');
+          var nameLink = IO.el('a', '', worker.name);
+          nameLink.setAttribute('href', 'profile.html?id=' + encodeURIComponent(worker.id));
+          nameBox.appendChild(nameLink);
+          info.appendChild(nameBox);
+          info.appendChild(IO.el('br'));
+          info.appendChild(IO.ui.statusChip(worker.status));
+          info.appendChild(document.createTextNode(' '));
+          info.appendChild(IO.ui.sampleBadge());
+          head.appendChild(info);
+          workerCard.appendChild(head);
+
+          var profileButton = IO.tEl('a', 'btn btn-outline btn-block', 'common.viewProfile', 'View profile');
+          profileButton.setAttribute('href', 'profile.html?id=' + encodeURIComponent(worker.id));
+          profileButton.style.marginTop = '14px';
+          workerCard.appendChild(profileButton);
+        } else {
+          workerCard.appendChild(IO.el('p', 'muted', '-'));
+        }
+        side.appendChild(workerCard);
+
+        var actions = IO.el('div', 'card');
+        actions.appendChild(IO.tEl('h3', '', 'gig.actions', 'Next steps'));
+        var stack = IO.el('div', 'action-stack');
+        stack.appendChild(featureButton('btn btn-primary btn-block', 'gig.hire', 'Hire and pay', 'payments'));
+        stack.appendChild(featureButton('btn btn-outline btn-block', 'gig.escrow', 'Hold payment safely', 'escrow'));
+        stack.appendChild(featureButton('btn btn-outline btn-block', 'gig.call', 'Audio call', 'audioCalls'));
+
+        var message = IO.tEl('button', 'btn btn-outline btn-block', 'common.sendMessage', 'Send a message');
+        message.setAttribute('type', 'button');
+        message.addEventListener('click', IO.safe(function () {
+          IO.showMessage(IO.t('demo.notice', 'Demo only: nothing is saved or sent.'));
+        }));
+        stack.appendChild(message);
+        actions.appendChild(stack);
+
+        var tip = IO.tEl('div', 'notice', 'gig.safetyTip',
+          'Safety tip: agree on the details in writing and never share passwords or codes.');
+        tip.style.marginTop = '16px';
+        tip.style.marginBottom = '0';
+        actions.appendChild(tip);
+        side.appendChild(actions);
+
+        layout.appendChild(main);
+        layout.appendChild(side);
+        box.appendChild(layout);
+      }
+
+      function render() {
+        var box = document.getElementById('gig-box');
+        try {
+          if (!IO.data || !IO.ui) { throw new Error('Sample data is missing'); }
+          IO.clear(box);
+
+          var id = IO.param('id');
+          var gig = id ? IO.data.getGig(id) : null;
+
+          if (!gig) {
+            box.appendChild(IO.emptyBox('🧭', 'gig.notFound.title', 'gig.notFound.text',
+              'browse.html', 'gig.back'));
+            return;
+          }
+
+          buildGig(gig, box);
+          document.title = IO.pick(gig.title) + ' | In&Out';
+        } catch (err) {
+          IO.clear(box);
+          box.appendChild(IO.el('div', 'notice notice-error', IO.t('error.load')));
+          IO.reportError(err, 'error.load');
+        }
+      }
+
+      render();
+      document.addEventListener('inandout:langchange', render);
+    })();
+  </script>
+</body>
+</html>
