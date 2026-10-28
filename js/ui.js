@@ -1,8 +1,10 @@
 /* ==========================================================================
    js/ui.js  -  SHARED PIECES OF THE SCREEN (drawn the same way on every page)
    --------------------------------------------------------------------------
-   Right now it draws the gig card. Later batches add more pieces here.
-   Needs app.js (helpers) and data.js (sample data) to be loaded.
+   Right now it draws the gig card. Needs app.js (helpers) and data.js
+   (sample data) to be loaded first.
+   Public screens never show verification statuses of any person. A member
+   gets ONE badge only: "Identity checked" (see IO.access.identityBadges).
    ========================================================================== */
 (function () {
   'use strict';
@@ -15,15 +17,6 @@
     return IO.tEl('span', 'badge badge-sample', 'common.sample', 'Sample data');
   };
 
-  /* A verification status chip. status = none, pending, verified or rejected.
-     "verified" exists ONLY for sample workers, and a "Sample data" badge
-     must always be shown next to it. */
-  ui.statusChip = function (status) {
-    var known = { none: 1, pending: 1, verified: 1, rejected: 1 };
-    var s = known[status] ? status : 'none';
-    return IO.tEl('span', 'status status-' + s, 'status.' + s, 'Not verified');
-  };
-
   /* "150 000 UZS" or "80 000 UZS per hour" */
   ui.priceText = function (gig) {
     var text = IO.formatPrice(gig.price);
@@ -31,9 +24,7 @@
     return text;
   };
 
-  /* One gig card.
-     SAFETY STEP (later): the rules for visitors (teaser or hidden) will be
-     applied here, so every page gets them automatically. */
+  /* One gig card. Only pages that are already gated for members use this. */
   ui.gigCard = function (gig) {
     var worker = IO.data.getWorker(gig.workerId);
     var card = IO.el('article', 'card gig-card');

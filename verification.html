@@ -15,52 +15,38 @@
       <p data-i18n="verify.intro">Verification helps people trust each other. In this demo nobody is really verified.</p>
       <div class="notice notice-draft" data-i18n="verify.privacy">Personal data and privacy rules are not written yet. DRAFT: needs lawyer review.</div>
 
-      <h2 style="margin-top:28px" data-i18n="verify.steps.title">How verification will work</h2>
-      <div class="grid grid-3">
-        <div class="card">
-          <div class="icon-circle">📱</div>
-          <h3 data-i18n="verify.step.1.title">1. Phone code</h3>
-          <p class="muted" data-i18n="verify.step.1.text">We send a short code by SMS to confirm your number.</p>
-          <button type="button" class="btn btn-outline btn-block" data-feature="smsVerification" data-i18n="verify.btn.sms">Send SMS code</button>
-        </div>
-        <div class="card">
-          <div class="icon-circle">📄</div>
-          <h3 data-i18n="verify.step.2.title">2. ID document</h3>
-          <p class="muted" data-i18n="verify.step.2.text">You add a photo of your ID document.</p>
-        </div>
-        <div class="card">
-          <div class="icon-circle">🙂</div>
-          <h3 data-i18n="verify.step.3.title">3. Face check</h3>
-          <p class="muted" data-i18n="verify.step.3.text">A quick selfie check shows that the ID is yours.</p>
-        </div>
-      </div>
-      <p class="btn-row" style="margin-top:20px">
-        <button type="button" class="btn btn-primary" data-feature="idCheck" data-i18n="verify.btn.id">Start ID and face check</button>
-      </p>
+      <!-- THE PERSON'S OWN PRIVATE SCREEN.
+           Verification statuses (not started, pending, please send again, not approved)
+           may be shown ONLY here, to the person themself, and on the admin page.
+           They must never appear on any screen other members can see. -->
+      <div id="mine-box" class="card" style="margin-top:20px"></div>
 
-      <h2 style="margin-top:36px" data-i18n="verify.statuses.title">The 4 verification statuses</h2>
-      <div class="grid grid-2">
-        <div class="card">
-          <span class="status status-none" data-i18n="status.none">Not verified</span>
-          <p class="muted" style="margin:12px 0 0" data-i18n="status.none.text">This person has not started verification.</p>
+      <div id="steps-area">
+        <h2 style="margin-top:28px" data-i18n="verify.steps.title">How verification will work</h2>
+        <div class="grid grid-3">
+          <div class="card">
+            <div class="icon-circle">📱</div>
+            <h3 data-i18n="verify.step.1.title">1. Phone code</h3>
+            <p class="muted" data-i18n="verify.step.1.text">We send a short code by SMS to confirm your number.</p>
+            <button type="button" class="btn btn-outline btn-block" data-feature="smsVerification" data-i18n="verify.btn.sms">Send SMS code</button>
+          </div>
+          <div class="card">
+            <div class="icon-circle">📄</div>
+            <h3 data-i18n="verify.step.2.title">2. ID document</h3>
+            <p class="muted" data-i18n="verify.step.2.text">You add a photo of your ID document.</p>
+          </div>
+          <div class="card">
+            <div class="icon-circle">🙂</div>
+            <h3 data-i18n="verify.step.3.title">3. Face check</h3>
+            <p class="muted" data-i18n="verify.step.3.text">A quick selfie check shows that the ID is yours.</p>
+          </div>
         </div>
-        <div class="card">
-          <span class="status status-pending" data-i18n="status.pending">Pending</span>
-          <p class="muted" style="margin:12px 0 0" data-i18n="status.pending.text">Documents were sent and are waiting to be checked.</p>
-        </div>
-        <div class="card">
-          <span class="status status-verified" data-i18n="status.verified">Verified (sample only)</span>
-          <span class="badge badge-sample" data-i18n="common.sample">Sample data</span>
-          <p class="muted" style="margin:12px 0 0" data-i18n="status.verified.text">Verification passed. In this demo, only sample data can have this status.</p>
-        </div>
-        <div class="card">
-          <span class="status status-rejected" data-i18n="status.rejected">Not approved</span>
-          <p class="muted" style="margin:12px 0 0" data-i18n="status.rejected.text">Verification did not pass. You can try again.</p>
-        </div>
+        <p class="btn-row" style="margin-top:20px">
+          <button type="button" class="btn btn-primary" data-feature="idCheck" data-i18n="verify.btn.id">Start ID and face check</button>
+        </p>
       </div>
 
       <p class="btn-row" style="margin-top:28px">
-        <a class="btn btn-outline" href="browse.html" data-i18n="common.browseGigs">Browse gigs</a>
         <a class="btn btn-outline" href="index.html" data-i18n="common.backHome">Back to home</a>
       </p>
     </div>
@@ -87,5 +73,111 @@
   <script src="js/features/sms.js"></script>
   <script src="js/features/email.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/access.js"></script>
+
+  <script>
+    (function () {
+      var IO = window.InAndOut;
+
+      /* DEMO ONLY: with no real accounts, a visitor can pick which status to preview.
+         A verified member always sees "Identity checked". */
+      var KEY = 'inandout_demo_my_verification';
+      var PREVIEW = ['not_started', 'pending', 'needs_resubmission', 'rejected'];
+      var CHIP = {
+        not_started: 'status-none',
+        pending: 'status-pending',
+        needs_resubmission: 'status-pending',
+        rejected: 'status-rejected'
+      };
+      var preview = 'not_started';
+
+      try {
+        var saved = window.localStorage.getItem(KEY);
+        if (PREVIEW.indexOf(saved) !== -1) { preview = saved; }
+      } catch (e0) { /* ignore */ }
+
+      function isVerifiedMember() {
+        return !!(IO.demo && IO.demo.get && IO.demo.get() === 'verified');
+      }
+
+      function pickButton(name) {
+        var button = IO.tEl('button', '', 'vstatus.' + name, name);
+        button.setAttribute('type', 'button');
+        button.setAttribute('data-vpreview', name);
+        button.setAttribute('aria-pressed', name === preview ? 'true' : 'false');
+        button.addEventListener('click', IO.safe(function () {
+          preview = name;
+          try { window.localStorage.setItem(KEY, name); } catch (e1) { /* ignore */ }
+          render();
+        }));
+        return button;
+      }
+
+      function render() {
+        var box = document.getElementById('mine-box');
+        var steps = document.getElementById('steps-area');
+        try {
+          IO.clear(box);
+          var member = isVerifiedMember();
+          var status = member ? 'approved' : preview;
+
+          box.appendChild(IO.tEl('h2', '', 'verify.mine.title', 'Your verification status'));
+          box.appendChild(IO.tEl('p', 'muted', 'verify.mine.private',
+            'Private: only you can see this on your own screen.'));
+
+          /* Demo helper, only for visitors. */
+          if (!member) {
+            var pick = IO.el('div', 'demo-state');
+            pick.style.justifyContent = 'flex-start';
+            pick.style.marginBottom = '14px';
+            pick.appendChild(IO.tEl('span', 'demo-state-label', 'verify.demo.pick',
+              'Demo only: choose what this person would see on their private screen.'));
+            for (var i = 0; i < PREVIEW.length; i++) { pick.appendChild(pickButton(PREVIEW[i])); }
+            box.appendChild(pick);
+          }
+
+          /* The status itself. */
+          var line = IO.el('p');
+          if (status === 'approved') {
+            line.appendChild(IO.access ? IO.access.identityBadges()
+              : IO.tEl('span', 'badge badge-identity', 'badge.identity', 'Identity checked'));
+          } else {
+            line.appendChild(IO.tEl('span', 'status ' + CHIP[status], 'vstatus.' + status, status));
+          }
+          box.appendChild(line);
+          box.appendChild(IO.tEl('p', '', 'vstatus.' + status + '.text'));
+
+          /* What the person can do next. */
+          var row = IO.el('div', 'btn-row');
+          if (status === 'needs_resubmission') {
+            var resend = IO.tEl('button', 'btn btn-primary', 'verify.btn.resend', 'Send documents again');
+            resend.setAttribute('type', 'button');
+            resend.setAttribute('data-feature', 'idCheck');
+            row.appendChild(resend);
+          } else if (status === 'rejected') {
+            var contact = IO.tEl('a', 'btn btn-primary', 'nav.contact', 'Contact');
+            contact.setAttribute('href', 'contact.html');
+            row.appendChild(contact);
+          } else if (status === 'approved') {
+            var browse = IO.tEl('a', 'btn btn-primary', 'common.browseGigs', 'Browse gigs');
+            browse.setAttribute('href', 'browse.html');
+            row.appendChild(browse);
+          }
+          if (row.firstChild) { box.appendChild(row); }
+
+          /* Members who are already checked do not need the steps. */
+          if (member) { steps.classList.add('hidden'); } else { steps.classList.remove('hidden'); }
+        } catch (err) {
+          IO.clear(box);
+          box.appendChild(IO.el('div', 'notice notice-error', IO.t('error.load')));
+          IO.reportError(err, 'error.load');
+        }
+      }
+
+      render();
+      document.addEventListener('inandout:langchange', render);
+      document.addEventListener('inandout:statechange', render);
+    })();
+  </script>
 </body>
 </html>

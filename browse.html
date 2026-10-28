@@ -12,68 +12,75 @@
   <main id="main" class="section">
     <div class="container">
       <h1 data-i18n="browse.title">Browse gigs</h1>
-      <p class="muted" data-i18n="browse.intro">Search and filter. All gigs below are sample data.</p>
 
-      <div class="browse-layout">
+      <!-- Visitors and suspended members see this friendly screen instead of the gigs. -->
+      <div id="locked-area"></div>
 
-        <form id="filter-form" class="filters" novalidate>
-          <details id="filters-box" class="card filters-box" open>
-            <summary data-i18n="browse.filters">Filters</summary>
+      <!-- Only verified members see this part. -->
+      <div id="members-area" class="hidden">
+        <p class="muted" data-i18n="browse.intro">Search and filter. All gigs below are sample data.</p>
 
-            <div class="form-row">
-              <label for="f-search" data-i18n="browse.search.label">Search</label>
-              <input id="f-search" type="search" autocomplete="off"
-                     data-i18n-placeholder="browse.search.placeholder"
-                     placeholder="For example: cleaning, English, logo">
-            </div>
+        <div class="browse-layout">
 
-            <div class="form-row">
-              <label for="f-category" data-i18n="browse.category">Category</label>
-              <select id="f-category">
-                <option value="" data-i18n="common.all">All</option>
-              </select>
-            </div>
+          <form id="filter-form" class="filters" novalidate>
+            <details id="filters-box" class="card filters-box" open>
+              <summary data-i18n="browse.filters">Filters</summary>
 
-            <div class="form-row">
-              <label for="f-mode" data-i18n="browse.mode">Type</label>
-              <select id="f-mode">
-                <option value="" data-i18n="common.all">All</option>
-                <option value="online" data-i18n="common.online">Online</option>
-                <option value="inperson" data-i18n="common.inPerson">In person</option>
-              </select>
-            </div>
+              <div class="form-row">
+                <label for="f-search" data-i18n="browse.search.label">Search</label>
+                <input id="f-search" type="search" autocomplete="off"
+                       data-i18n-placeholder="browse.search.placeholder"
+                       placeholder="For example: cleaning, English, logo">
+              </div>
 
-            <div class="form-row">
-              <label for="f-city" data-i18n="browse.city">City</label>
-              <select id="f-city">
-                <option value="" data-i18n="city.any">Any city</option>
-              </select>
-            </div>
+              <div class="form-row">
+                <label for="f-category" data-i18n="browse.category">Category</label>
+                <select id="f-category">
+                  <option value="" data-i18n="common.all">All</option>
+                </select>
+              </div>
 
-            <div class="form-row">
-              <label for="f-max" data-i18n="browse.maxPrice">Maximum price (UZS)</label>
-              <input id="f-max" type="number" inputmode="numeric" min="1" step="1000">
-              <p id="max-error" class="field-error hidden" data-i18n="form.number">Please enter a number greater than 0.</p>
-            </div>
+              <div class="form-row">
+                <label for="f-mode" data-i18n="browse.mode">Type</label>
+                <select id="f-mode">
+                  <option value="" data-i18n="common.all">All</option>
+                  <option value="online" data-i18n="common.online">Online</option>
+                  <option value="inperson" data-i18n="common.inPerson">In person</option>
+                </select>
+              </div>
 
-            <div class="form-row">
-              <label for="f-sort" data-i18n="browse.sort">Sort by</label>
-              <select id="f-sort">
-                <option value="new" data-i18n="browse.sort.new">Newest first</option>
-                <option value="low" data-i18n="browse.sort.low">Price: low to high</option>
-                <option value="high" data-i18n="browse.sort.high">Price: high to low</option>
-              </select>
-            </div>
+              <div class="form-row">
+                <label for="f-city" data-i18n="browse.city">City</label>
+                <select id="f-city">
+                  <option value="" data-i18n="city.any">Any city</option>
+                </select>
+              </div>
 
-            <button type="button" id="f-reset" class="btn btn-outline btn-block" data-i18n="common.reset">Clear filters</button>
-          </details>
-        </form>
+              <div class="form-row">
+                <label for="f-max" data-i18n="browse.maxPrice">Maximum price (UZS)</label>
+                <input id="f-max" type="number" inputmode="numeric" min="1" step="1000">
+                <p id="max-error" class="field-error hidden" data-i18n="form.number">Please enter a number greater than 0.</p>
+              </div>
 
-        <section aria-live="polite">
-          <p id="count" class="results-count"></p>
-          <div id="results" class="grid grid-2"></div>
-        </section>
+              <div class="form-row">
+                <label for="f-sort" data-i18n="browse.sort">Sort by</label>
+                <select id="f-sort">
+                  <option value="new" data-i18n="browse.sort.new">Newest first</option>
+                  <option value="low" data-i18n="browse.sort.low">Price: low to high</option>
+                  <option value="high" data-i18n="browse.sort.high">Price: high to low</option>
+                </select>
+              </div>
 
+              <button type="button" id="f-reset" class="btn btn-outline btn-block" data-i18n="common.reset">Clear filters</button>
+            </details>
+          </form>
+
+          <section aria-live="polite">
+            <p id="count" class="results-count"></p>
+            <div id="results" class="grid grid-2"></div>
+          </section>
+
+        </div>
       </div>
     </div>
   </main>
@@ -100,6 +107,7 @@
   <script src="js/features/email.js"></script>
   <script src="js/app.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/access.js"></script>
 
   <script>
     (function () {
@@ -200,11 +208,11 @@
         render();
       }
 
-      function render() {
+      /* Draw the gig cards. Only called for verified members. */
+      function renderResults() {
         var out = $('results');
         var count = $('count');
         try {
-          if (!IO.data || !IO.data.gigs || !IO.ui) { throw new Error('Sample data is missing'); }
           var f = readFilters();
           if (f.maxError) { $('max-error').classList.remove('hidden'); }
           else { $('max-error').classList.add('hidden'); }
@@ -230,6 +238,29 @@
           out.className = '';
           count.textContent = '';
           out.appendChild(IO.el('div', 'notice notice-error', IO.t('browse.error')));
+          IO.reportError(err, 'browse.error');
+        }
+      }
+
+      /* THE GATE: members see the page, everyone else sees a friendly screen. */
+      function render() {
+        var members = $('members-area');
+        var locked = $('locked-area');
+        try {
+          if (!IO.access || !IO.data || !IO.ui) { throw new Error('A needed file is missing'); }
+          var isMember = IO.access.gate(locked, function () { /* the real page is the members area below */ });
+          if (!isMember) {
+            members.classList.add('hidden');
+            IO.clear($('results'));
+            $('count').textContent = '';
+            return;
+          }
+          members.classList.remove('hidden');
+          renderResults();
+        } catch (err) {
+          members.classList.add('hidden');
+          IO.clear(locked);
+          locked.appendChild(IO.el('div', 'notice notice-error', IO.t('browse.error')));
           IO.reportError(err, 'browse.error');
         }
       }
@@ -267,6 +298,7 @@
         $('f-sort').addEventListener('change', render);
         $('f-reset').addEventListener('click', IO.safe(resetFilters));
         document.addEventListener('inandout:langchange', render);
+        document.addEventListener('inandout:statechange', render);
 
         render();
       }

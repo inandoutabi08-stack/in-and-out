@@ -20,7 +20,7 @@
   /* English names of each feature (used if translations are not loaded). */
   var LABELS = {
     payments: 'Online payments',
-    escrow: 'Safe payment holding',
+    escrow: 'Payment holding',
     idCheck: 'Automatic ID check',
     audioCalls: 'Audio calls',
     smsVerification: 'SMS verification',

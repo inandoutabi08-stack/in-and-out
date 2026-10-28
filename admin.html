@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="title.admin">Admin (design only) | In&Out</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="admin">
+  <div id="site-header"></div>
+
+  <main id="main" class="section">
+    <div class="container" id="admin-box"></div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <noscript>
+    <p class="notice notice-error" style="margin:16px">
+      This site needs JavaScript. Please switch it on in your browser.<br>
+      Для работы сайта нужен JavaScript. Пожалуйста, включите его в браузере.<br>
+      Sayt ishlashi uchun JavaScript kerak. Iltimos, uni brauzerda yoqing.
+    </p>
+  </noscript>
+
+  <script src="features.js"></script>
+  <script src="js/safe.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/features/payments.js"></script>
+  <script src="js/features/escrow.js"></script>
+  <script src="js/features/idcheck.js"></script>
+  <script src="js/features/calls.js"></script>
+  <script src="js/features/sms.js"></script>
+  <script src="js/features/email.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/access.js"></script>
+
+  <script>
+    /* ======================================================================
+       ADMIN PAGE DESIGN (demo only)
+       ----------------------------------------------------------------------
+       !!! THIS ONLY HIDES THINGS VISUALLY. !!!
+       Real protection must be added in Step 2 with Firebase security rules:
+       only the admin account may open this page or change any status.
+       Everything below is saved only in YOUR browser (localStorage), nothing
+       is sent anywhere, and anyone can read this file.
+       The verification statuses (not started, pending, please send again,
+       not approved) may appear ONLY on this page and on a person's own
+       private verification screen.
+       ====================================================================== */
+    (function () {
+      var IO = window.InAndOut;
+
+      var K_ADMIN = 'inandout_demo_admin';
+      var K_APPLICANTS = 'inandout_demo_admin_applicants';
+      var K_REPORTS = 'inandout_demo_admin_reports';
+      var K_STRIKES = 'inandout_demo_strikes';
+
+      var CHIP = {
+        not_started: 'status-none',
+        pending: 'status-pending',
+        needs_resubmission: 'status-pending',
+        rejected: 'status-rejected',
+        approved: 'status-verified'
+      };
+
+      /* ----- saving in this browser only ----- */
+      function load(key, fallback) {
+        try {
+          var raw = window.localStorage.getItem(key);
+          if (raw) {
+            var value = JSON.parse(raw);
+            if (value && typeof value === 'object') { return value; }
+          }
+        } catch (e) { /* ignore */ }
+        return fallback;
+      }
+
+      function save(key, value) {
+        try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* ignore */ }
+      }
+
+      function isAdminDemo() {
+        try { return window.localStorage.getItem(K_ADMIN) === '1'; } catch (e) { return false; }
+      }
+
+      function setAdminDemo(on) {
+        try {
+          if (on) { window.localStorage.setItem(K_ADMIN, '1'); }
+          else { window.localStorage.removeItem(K_ADMIN); }
+        } catch (e) { /* ignore */ }
+      }
+
+      function demoToast() {
+        IO.showMessage(IO.t('demo.notice', 'Demo only: nothing is saved or sent.'));
+      }
+
+      /* ----- small building blocks ----- */
+      function button(className, key, fallback, onClick) {
+        var b = IO.tEl('button', className, key, fallback);
+        b.setAttribute('type', 'button');
+        b.addEventListener('click', IO.safe(onClick));
+        return b;
+      }
+
+      function statusChip(status) {
+        return IO.tEl('span', 'status ' + (CHIP[status] || 'status-none'), 'vstatus.' + status, status);
+      }
+
+      function sampleBadge() {
+        return IO.tEl('span', 'badge badge-sample', 'common.sample', 'Sample data');
+      }
+
+      function heading(parent, titleKey, titleFb, introKey, introFb) {
+        var h = IO.tEl('h2', '', titleKey, titleFb);
+        h.style.marginTop = '32px';
+        parent.appendChild(h);
+        if (introKey) { parent.appendChild(IO.tEl('p', 'muted', introKey, introFb)); }
+      }
+
+      /* ----- the data this page changes ----- */
+      function applicantStatus(a) {
+        var changes = load(K_APPLICANTS, {});
+        return changes[a.id] || a.status;
+      }
+
+      function setApplicantStatus(id, status) {
+        var changes = load(K_APPLICANTS, {});
+        changes[id] = status;
+        save(K_APPLICANTS, changes);
+        demoToast();
+        render();
+      }
+
+      function strikesOf() { return load(K_STRIKES, { w4: 1 }); }
+
+      function addStrike(memberId) {
+        if (!memberId) { return; }
+        var strikes = strikesOf();
+        strikes[memberId] = (strikes[memberId] || 0) + 1;
+        save(K_STRIKES, strikes);
+      }
+
+      function clearStrikes(memberId) {
+        var strikes = strikesOf();
+        strikes[memberId] = 0;
+        save(K_STRIKES, strikes);
+        demoToast();
+        render();
+      }
+
+      function closeReport(id) {
+        var closed = load(K_REPORTS, {});
+        closed[id] = true;
+        save(K_REPORTS, closed);
+      }
+
+      function resetAll() {
+        try {
+          window.localStorage.removeItem(K_APPLICANTS);
+          window.localStorage.removeItem(K_REPORTS);
+          window.localStorage.removeItem(K_STRIKES);
+        } catch (e) { /* ignore */ }
+        if (IO.access) { IO.access.setSuspended(false); }
+        render();
+      }
+
+      /* ----- the screens ----- */
+      function buildLocked(box) {
+        var locked = IO.emptyBox('🔒', 'admin.locked.title', 'admin.locked.text');
+        var open = button('btn btn-primary', 'admin.open.demo', 'Open the admin design (demo)', function () {
+          setAdminDemo(true);
+          render();
+        });
+        open.style.marginTop = '14px';
+        locked.appendChild(open);
+        var hint = IO.tEl('p', 'muted', 'admin.locked.demo',
+          'Demo only: open the admin design to see how it will look.');
+        hint.style.marginTop = '16px';
+        hint.style.fontSize = '0.95rem';
+        locked.appendChild(hint);
+        box.appendChild(locked);
+      }
+
+      function buildSummary(parent) {
+        var D = IO.data;
+        var waiting = 0;
+        for (var i = 0; i < D.applicants.length; i++) {
+          if (applicantStatus(D.applicants[i]) === 'pending') { waiting++; }
+        }
+        var closed = load(K_REPORTS, {});
+        var openReports = 0;
+        for (var j = 0; j < D.reports.length; j++) {
+          if (closed[D.reports[j].id] !== true) { openReports++; }
+        }
+
+        var grid = IO.el('div', 'grid grid-2');
+        var items = [
+          [waiting, 'admin.sum.waiting', 'Waiting for review'],
+          [openReports, 'admin.sum.reports', 'Open reports']
+        ];
+        for (var k = 0; k < items.length; k++) {
+          var card = IO.el('div', 'card center');
+          var number = IO.el('p', '', String(items[k][0]));
+          number.style.fontSize = '2.2rem';
+          number.style.fontWeight = '800';
+          number.style.margin = '0';
+          card.appendChild(number);
+          card.appendChild(IO.tEl('p', 'muted', items[k][1], items[k][2]));
+          grid.appendChild(card);
+        }
+        parent.appendChild(grid);
+      }
+
+      function buildDemoMember(parent) {
+        var suspended = IO.access.isSuspended();
+        var card = IO.el('div', 'card');
+        card.style.marginTop = '20px';
+        card.appendChild(IO.tEl('h3', '', 'admin.s.title', 'Your demo member'));
+        card.appendChild(IO.tEl('p', 'muted', 'admin.s.text',
+          'Suspend or reinstate the demo member you are testing with, to see the suspended screen on the member pages.'));
+
+        var state = IO.el('p');
+        state.appendChild(IO.tEl('span', suspended ? 'status status-rejected' : 'status status-verified',
+          suspended ? 'admin.s.suspended' : 'admin.s.active', suspended ? 'Suspended' : 'Active'));
+        card.appendChild(state);
+
+        if (suspended) {
+          card.appendChild(button('btn btn-primary', 'admin.btn.reinstate', 'Reinstate', function () {
+            IO.access.setSuspended(false);
+          }));
+        } else {
+          card.appendChild(button('btn btn-outline', 'admin.btn.suspendDemo', 'Suspend my demo member', function () {
+            IO.access.setSuspended(true);
+          }));
+        }
+        parent.appendChild(card);
+      }
+
+      function buildQueue(parent) {
+        var D = IO.data;
+        heading(parent, 'admin.q.title', 'Identity verification queue',
+          'admin.q.intro', 'People who applied for an identity check. Only the admin can approve or not approve.');
+
+        if (!D.applicants || D.applicants.length === 0) {
+          parent.appendChild(IO.emptyBox('✅', 'admin.q.empty', 'admin.q.empty'));
+          return;
+        }
+
+        var list = IO.el('div', 'stack');
+        for (var i = 0; i < D.applicants.length; i++) {
+          list.appendChild(applicantCard(D.applicants[i]));
+        }
+        parent.appendChild(list);
+      }
+
+      function applicantCard(a) {
+        var status = applicantStatus(a);
+        var card = IO.el('div', 'card');
+
+        var head = IO.el('p');
+        head.appendChild(IO.el('strong', '', a.name));
+        head.appendChild(document.createTextNode(' · ' + IO.t('city.' + a.city, a.city)));
+        card.appendChild(head);
+
+        var sent = IO.el('p', 'muted');
+        sent.appendChild(IO.tEl('span', '', 'admin.q.sent', 'Sent'));
+        sent.appendChild(document.createTextNode(': '));
+        if (a.sent) { sent.appendChild(document.createTextNode(a.sent)); }
+        else { sent.appendChild(IO.tEl('span', '', 'admin.q.sentNone', 'Nothing sent yet')); }
+        card.appendChild(sent);
+
+        var chips = IO.el('p');
+        chips.appendChild(statusChip(status));
+        chips.appendChild(document.createTextNode(' '));
+        chips.appendChild(sampleBadge());
+        card.appendChild(chips);
+
+        var row = IO.el('div', 'btn-row');
+        if (status === 'pending') {
+          row.appendChild(button('btn btn-primary btn-small', 'admin.btn.approve', 'Approve', function () {
+            setApplicantStatus(a.id, 'approved');
+          }));
+          row.appendChild(button('btn btn-outline btn-small', 'admin.btn.ask', 'Ask to send again', function () {
+            setApplicantStatus(a.id, 'needs_resubmission');
+          }));
+          row.appendChild(button('btn btn-outline btn-small', 'admin.btn.reject', 'Do not approve', function () {
+            setApplicantStatus(a.id, 'rejected');
+          }));
+        } else if (status === 'needs_resubmission') {
+          row.appendChild(button('btn btn-outline btn-small', 'admin.btn.reject', 'Do not approve', function () {
+            setApplicantStatus(a.id, 'rejected');
+          }));
+        } else if (status === 'rejected') {
+          row.appendChild(button('btn btn-outline btn-small', 'admin.btn.reopen', 'Reopen review', function () {
+            setApplicantStatus(a.id, 'pending');
+          }));
+        }
+        if (row.firstChild) { card.appendChild(row); }
+        return card;
+      }
+
+      function memberOfReport(report) {
+        var D = IO.data;
+        if (report.targetType === 'gig') {
+          var gig = D.getGig(report.targetId);
+          return gig ? D.getWorker(gig.workerId) : null;
+        }
+        return D.getWorker(report.targetId);
+      }
+
+      function reportCard(report, closed) {
+        var D = IO.data;
+        var isClosed = closed[report.id] === true;
+        var member = memberOfReport(report);
+        var card = IO.el('div', 'card');
+
+        var badges = IO.el('p');
+        badges.appendChild(IO.tEl('span', 'badge',
+          report.targetType === 'gig' ? 'admin.r.gig' : 'admin.r.profile'));
+        badges.appendChild(document.createTextNode(' '));
+        badges.appendChild(IO.tEl('span', isClosed ? 'badge' : 'badge badge-inperson',
+          isClosed ? 'admin.r.closed' : 'admin.r.open'));
+        badges.appendChild(document.createTextNode(' '));
+        badges.appendChild(sampleBadge());
+        card.appendChild(badges);
+
+        var label = '-';
+        if (report.targetType === 'gig') {
+          var gig = D.getGig(report.targetId);
+          label = gig ? IO.pick(gig.title) : '-';
+          if (member) { label += ' · ' + member.name; }
+        } else if (member) {
+          label = member.name;
+        }
+        var title = IO.el('p');
+        title.appendChild(IO.el('strong', '', label));
+        card.appendChild(title);
+
+        card.appendChild(IO.el('p', 'muted',
+          IO.t('admin.reason.' + report.reason, report.reason) + ' · ' + report.date));
+
+        if (!isClosed) {
+          var row = IO.el('div', 'btn-row');
+          row.appendChild(button('btn btn-outline btn-small', 'admin.btn.dismiss', 'Dismiss', function () {
+            closeReport(report.id);
+            demoToast();
+            render();
+          }));
+          row.appendChild(button('btn btn-outline btn-small', 'admin.btn.strike', 'Add a strike', function () {
+            addStrike(member ? member.id : '');
+            closeReport(report.id);
+            demoToast();
+            render();
+          }));
+          row.appendChild(button('btn btn-outline btn-small', 'admin.btn.suspend', 'Suspend member (demo)', function () {
+            IO.access.setSuspended(true);
+            IO.showMessage(IO.t('admin.s.toast',
+              'Demo: your demo member is now suspended. Open a member page to see the suspended screen.'));
+          }));
+          card.appendChild(row);
+        }
+        return card;
+      }
+
+      function buildReports(parent) {
+        var D = IO.data;
+        heading(parent, 'admin.r.title', 'Reports',
+          'admin.r.intro', 'Reports from members about gigs and profiles. The team decides what happens next.');
+
+        if (!D.reports || D.reports.length === 0) {
+          parent.appendChild(IO.emptyBox('📭', 'admin.r.empty', 'admin.r.empty'));
+          return;
+        }
+        var closed = load(K_REPORTS, {});
+        var list = IO.el('div', 'stack');
+        for (var i = 0; i < D.reports.length; i++) {
+          list.appendChild(reportCard(D.reports[i], closed));
+        }
+        parent.appendChild(list);
+      }
+
+      function buildMembers(parent) {
+        var D = IO.data;
+        heading(parent, 'admin.m.title', 'Members and strikes',
+          'admin.m.intro', 'A strike is a recorded warning. How many strikes lead to suspension is for the team to decide. This demo never suspends anyone by itself.');
+
+        var strikes = strikesOf();
+        var list = IO.el('div', 'stack');
+        for (var i = 0; i < D.workers.length; i++) {
+          (function (worker) {
+            var card = IO.el('div', 'card');
+            var head = IO.el('p');
+            head.appendChild(IO.el('strong', '', worker.name));
+            head.appendChild(document.createTextNode(' '));
+            head.appendChild(sampleBadge());
+            card.appendChild(head);
+
+            var count = IO.el('p', 'muted');
+            count.appendChild(IO.tEl('span', '', 'admin.m.strikes', 'Strikes'));
+            count.appendChild(document.createTextNode(': ' + (strikes[worker.id] || 0)));
+            card.appendChild(count);
+
+            var row = IO.el('div', 'btn-row');
+            row.appendChild(button('btn btn-outline btn-small', 'admin.btn.strike', 'Add a strike', function () {
+              addStrike(worker.id);
+              demoToast();
+              render();
+            }));
+            row.appendChild(button('btn btn-outline btn-small', 'admin.m.clear', 'Clear strikes', function () {
+              clearStrikes(worker.id);
+            }));
+            card.appendChild(row);
+            list.appendChild(card);
+          })(D.workers[i]);
+        }
+        parent.appendChild(list);
+      }
+
+      function buildAdmin(box) {
+        box.appendChild(IO.tEl('div', 'notice notice-draft', 'admin.banner',
+          'ADMIN PAGE DESIGN (demo). Nothing here is real and nothing is saved on a server. In the real version only the admin account can open this page. DRAFT: needs review.'));
+
+        var tools = IO.el('div', 'btn-row');
+        tools.appendChild(button('btn btn-outline btn-small', 'admin.close.demo', 'Close the admin design', function () {
+          setAdminDemo(false);
+          render();
+        }));
+        tools.appendChild(button('btn btn-outline btn-small', 'admin.btn.resetAll', 'Reset the admin demo data', resetAll));
+        box.appendChild(tools);
+
+        var summary = IO.el('div');
+        summary.style.marginTop = '20px';
+        buildSummary(summary);
+        box.appendChild(summary);
+
+        buildDemoMember(box);
+        buildQueue(box);
+        buildReports(box);
+        buildMembers(box);
+
+        var rules = IO.el('div', 'notice notice-draft');
+        rules.style.marginTop = '32px';
+        rules.appendChild(IO.tEl('strong', '', 'admin.rules.title', 'Rules for the real version'));
+        rules.appendChild(IO.el('br'));
+        rules.appendChild(IO.tEl('span', '', 'admin.rules.text',
+          'Only the admin can set an account to identity checked, not approved or suspended. Only accounts with a checked identity can read member data. DRAFT: needs review.'));
+        box.appendChild(rules);
+      }
+
+      function render() {
+        var box = document.getElementById('admin-box');
+        try {
+          if (!IO.data || !IO.data.applicants || !IO.data.reports || !IO.access) {
+            throw new Error('A needed file is missing');
+          }
+          IO.clear(box);
+          box.appendChild(IO.tEl('h1', '', 'admin.title', 'Admin area (design only)'));
+          if (!isAdminDemo()) { buildLocked(box); return; }
+          buildAdmin(box);
+        } catch (err) {
+          IO.clear(box);
+          box.appendChild(IO.el('div', 'notice notice-error', IO.t('error.load')));
+          IO.reportError(err, 'error.load');
+        }
+      }
+
+      render();
+      document.addEventListener('inandout:langchange', render);
+      document.addEventListener('inandout:statechange', render);
+    })();
+  </script>
+</body>
+</html>

@@ -34,6 +34,7 @@
       <div class="container">
         <h2 class="section-title" data-i18n="home.featured.title">Featured gigs</h2>
         <p class="center muted" data-i18n="home.featured.note">All gigs on this demo site are sample data.</p>
+        <!-- Members see 3 gig cards here. Everyone else sees a friendly "Members only" screen. -->
         <div id="featured" class="grid grid-3"></div>
         <div class="section-link">
           <a class="btn btn-outline" href="browse.html" data-i18n="common.browseGigs">Browse gigs</a>
@@ -126,6 +127,7 @@
   <script src="js/features/email.js"></script>
   <script src="js/app.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/access.js"></script>
 
   <script>
     (function () {
@@ -136,12 +138,11 @@
         var featBox = document.getElementById('featured');
         try {
           var D = IO.data;
-          if (!D || !D.categories || !D.gigs || !IO.ui) { throw new Error('Sample data is missing'); }
+          if (!D || !D.categories || !D.gigs || !IO.ui || !IO.access) { throw new Error('A needed file is missing'); }
 
           IO.clear(catBox);
-          IO.clear(featBox);
 
-          /* Category tiles. Each one will open the browse page already filtered. */
+          /* Category tiles. They only show category names. Each one opens the browse page. */
           for (var i = 0; i < D.categories.length; i++) {
             var cat = D.categories[i];
             var tile = IO.el('a', 'cat-card');
@@ -151,19 +152,22 @@
             catBox.appendChild(tile);
           }
 
-          /* The 3 newest gigs. */
-          var newest = D.gigs.slice().sort(function (a, b) {
-            return a.posted < b.posted ? 1 : (a.posted > b.posted ? -1 : 0);
-          }).slice(0, 3);
+          /* THE GATE: members see the 3 newest gigs, everyone else sees a friendly screen. */
+          var isMember = IO.access.gate(featBox, function (box) {
+            var newest = D.gigs.slice().sort(function (a, b) {
+              return a.posted < b.posted ? 1 : (a.posted > b.posted ? -1 : 0);
+            }).slice(0, 3);
 
-          if (newest.length === 0) {
-            featBox.className = '';
-            featBox.appendChild(IO.emptyBox('🔍', 'browse.empty.title', 'browse.empty.text',
-              'post-gig.html', 'common.postGig'));
-          } else {
-            featBox.className = 'grid grid-3';
-            for (var j = 0; j < newest.length; j++) { featBox.appendChild(IO.ui.gigCard(newest[j])); }
-          }
+            if (newest.length === 0) {
+              box.className = '';
+              box.appendChild(IO.emptyBox('🔍', 'browse.empty.title', 'browse.empty.text',
+                'post-gig.html', 'common.postGig'));
+            } else {
+              box.className = 'grid grid-3';
+              for (var j = 0; j < newest.length; j++) { box.appendChild(IO.ui.gigCard(newest[j])); }
+            }
+          });
+          if (!isMember) { featBox.className = ''; }
         } catch (err) {
           IO.clear(catBox);
           IO.clear(featBox);
@@ -175,6 +179,7 @@
 
       render();
       document.addEventListener('inandout:langchange', render);
+      document.addEventListener('inandout:statechange', render);
     })();
   </script>
 </body>

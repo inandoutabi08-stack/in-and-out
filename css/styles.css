@@ -291,3 +291,48 @@ details.filters-box[open] > summary { margin-bottom: 14px; }
 @media (min-width: 960px) {
   .gig-layout { grid-template-columns: 1fr 380px; align-items: start; }
 }
+
+/* ==========================================================================
+   SAFETY BATCH S1: demo login-state switch (inside the yellow strip)
+   ========================================================================== */
+.demo-state { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; margin-top: 6px; }
+.demo-state-label { font-weight: 800; font-size: 0.85rem; }
+.demo-state button {
+  min-height: 36px; padding: 4px 12px; font: 700 0.85rem var(--font);
+  background: #ffffff; color: #5c3600; border: 2px solid var(--amber);
+  border-radius: 999px; cursor: pointer;
+}
+.demo-state button[aria-pressed="true"] { background: #5c3600; color: #ffffff; border-color: #5c3600; }
+
+/* ==========================================================================
+   ACCESS BATCH V1: demo login-state switch and the "Identity checked" badge
+   ========================================================================== */
+.demo-state { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; margin-top: 6px; }
+.demo-state-label { font-weight: 800; font-size: 0.85rem; }
+.demo-state button {
+  min-height: 36px; padding: 4px 12px; font: 700 0.85rem var(--font);
+  background: #ffffff; color: #5c3600; border: 2px solid var(--amber);
+  border-radius: 999px; cursor: pointer;
+}
+.demo-state button[aria-pressed="true"] { background: #5c3600; color: #ffffff; border-color: #5c3600; }
+
+.badge-identity { background: var(--green-soft); color: var(--green-dark); }
+.badge-identity::before { content: "✓ "; font-weight: 800; }
+.member-badges { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* ==========================================================================
+   ACCESS BATCH V2: warning boxes (information = blue, caution = amber, danger = red)
+   ========================================================================== */
+.warn {
+  border-left: 8px solid; border-radius: 12px; padding: 14px 16px; margin: 0 0 16px;
+  background: #ffffff; border-top: 1px solid var(--line);
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.warn p { margin: 0 0 8px; }
+.warn .warn-title { display: flex; gap: 8px; align-items: center; font-weight: 800; font-size: 1.05rem; }
+.warn-info { border-left-color: var(--blue); background: var(--blue-soft); }
+.warn-caution { border-left-color: #c77700; background: var(--amber-soft); color: #4a2c00; }
+.warn-danger { border-left-color: var(--red); background: var(--red-soft); color: #5e1010; }
+.warn-info .warn-title { color: var(--blue); }
+.warn-caution .warn-title { color: var(--amber); }
+.warn-danger .warn-title { color: var(--red); }

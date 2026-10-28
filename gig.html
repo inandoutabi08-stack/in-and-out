@@ -35,6 +35,7 @@
   <script src="js/features/email.js"></script>
   <script src="js/app.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/access.js"></script>
 
   <script>
     (function () {
@@ -55,6 +56,22 @@
         return button;
       }
 
+      /* The red-edged warning about paying outside the platform. */
+      function paymentWarning() {
+        var box = IO.el('div', 'warn warn-danger');
+        box.setAttribute('role', 'note');
+        var title = IO.el('p', 'warn-title');
+        title.appendChild(IO.el('span', '', '⚠️'));
+        title.appendChild(IO.tEl('span', '', 'warn.outside.title',
+          'Never pay or get paid outside the platform'));
+        box.appendChild(title);
+        box.appendChild(IO.tEl('p', '', 'warn.outside.text',
+          'Pay and get paid only through In&Out. If anyone asks you to send money, a bank card number or a code outside the platform, say no and report them. Online payments are coming soon. Until then, do not pay anyone in advance.'));
+        box.appendChild(IO.tEl('span', 'badge badge-sample', 'draft.tag', 'DRAFT: needs review'));
+        return box;
+      }
+
+      /* Only called for verified members. */
       function buildGig(gig, box) {
         var worker = IO.data.getWorker(gig.workerId);
 
@@ -64,7 +81,11 @@
         back.appendChild(IO.tEl('span', '', 'gig.back', 'Back to all gigs'));
         box.appendChild(back);
 
-        /* SAFETY STEP (later): a safety box for every gig goes here, at the top of the page. */
+        /* The warning sits at the top of every gig page. */
+        box.appendChild(paymentWarning());
+
+        /* SAFETY STEP (later): the full safety box and the Report / "I feel unsafe"
+           buttons for this gig will be added here. */
 
         var layout = IO.el('div', 'gig-layout');
         var main = IO.el('div', 'stack');
@@ -111,9 +132,7 @@
           nameBox.appendChild(nameLink);
           info.appendChild(nameBox);
           info.appendChild(IO.el('br'));
-          info.appendChild(IO.ui.statusChip(worker.status));
-          info.appendChild(document.createTextNode(' '));
-          info.appendChild(IO.ui.sampleBadge());
+          info.appendChild(IO.access.identityBadges());
           head.appendChild(info);
           workerCard.appendChild(head);
 
@@ -153,23 +172,27 @@
         box.appendChild(layout);
       }
 
+      /* THE GATE: members see the gig, everyone else sees a friendly screen. */
       function render() {
         var box = document.getElementById('gig-box');
         try {
-          if (!IO.data || !IO.ui) { throw new Error('Sample data is missing'); }
-          IO.clear(box);
+          if (!IO.access || !IO.data || !IO.ui) { throw new Error('A needed file is missing'); }
 
-          var id = IO.param('id');
-          var gig = id ? IO.data.getGig(id) : null;
+          var showed = IO.access.gate(box, function (member) {
+            var id = IO.param('id');
+            var gig = id ? IO.data.getGig(id) : null;
+            if (!gig) {
+              member.appendChild(IO.emptyBox('🧭', 'gig.notFound.title', 'gig.notFound.text',
+                'browse.html', 'gig.back'));
+              return;
+            }
+            buildGig(gig, member);
+            document.title = IO.pick(gig.title) + ' | In&Out';
+          });
 
-          if (!gig) {
-            box.appendChild(IO.emptyBox('🧭', 'gig.notFound.title', 'gig.notFound.text',
-              'browse.html', 'gig.back'));
-            return;
+          if (!showed || !IO.param('id')) {
+            document.title = IO.t('title.gig', 'Gig details | In&Out');
           }
-
-          buildGig(gig, box);
-          document.title = IO.pick(gig.title) + ' | In&Out';
         } catch (err) {
           IO.clear(box);
           box.appendChild(IO.el('div', 'notice notice-error', IO.t('error.load')));
@@ -179,6 +202,7 @@
 
       render();
       document.addEventListener('inandout:langchange', render);
+      document.addEventListener('inandout:statechange', render);
     })();
   </script>
 </body>

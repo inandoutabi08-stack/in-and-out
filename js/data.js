@@ -60,7 +60,7 @@
     {
       id: 'w2', sample: true, name: 'Aziz Rakhimov', city: 'samarkand',
       skills: ['tutoring'], languages: ['uz', 'ru', 'en'],
-      status: 'pending', rating: 4.7, jobs: 18,
+      status: 'verified', rating: 4.7, jobs: 18,
       bio: {
         en: "English teacher. Friendly lessons for beginners and for people who want to speak with confidence.",
         ru: "Преподаватель английского. Дружелюбные уроки для начинающих и для тех, кто хочет говорить уверенно.",
@@ -70,7 +70,7 @@
     {
       id: 'w3', sample: true, name: 'Malika Yusupova', city: 'tashkent',
       skills: ['cleaning'], languages: ['uz', 'ru'],
-      status: 'none', rating: null, jobs: 0,
+      status: 'verified', rating: null, jobs: 0,
       bio: {
         en: "Careful and punctual home cleaning. I bring my own cleaning products.",
         ru: "Аккуратная и пунктуальная уборка домов. Свои чистящие средства привожу с собой.",
@@ -80,7 +80,7 @@
     {
       id: 'w4', sample: true, name: 'Jasur Tursunov', city: 'bukhara',
       skills: ['repair'], languages: ['uz', 'ru'],
-      status: 'rejected', rating: null, jobs: 0,
+status: 'verified', rating: null, jobs: 0,
       bio: {
         en: "Handyman for small home repairs: taps, shelves, doors and furniture.",
         ru: "Мастер на все руки для мелкого ремонта: краны, полки, двери и мебель.",
@@ -100,7 +100,7 @@
     {
       id: 'w6', sample: true, name: 'Bekzod Nazarov', city: 'andijan',
       skills: ['it'], languages: ['uz', 'ru', 'en'],
-      status: 'none', rating: null, jobs: 0,
+      status: 'verified', rating: null, jobs: 0,
       bio: {
         en: "Web developer. I build simple, fast websites for small shops and services.",
         ru: "Веб-разработчик. Делаю простые и быстрые сайты для небольших магазинов и сервисов.",
@@ -317,6 +317,25 @@
     }
   ];
 
+    /* ----- SAMPLE ADMIN DATA (used ONLY by the admin page design) -----
+     These people are NOT members. They are never listed on any member page.
+     Their statuses (not_started, pending, needs_resubmission, rejected) may be
+     shown ONLY on the admin page and on a person's own private verification screen. */
+  D.applicants = [
+    { id: 'a1', sample: true, name: 'Rustam Hasanov',    city: 'tashkent',  status: 'pending',            sent: '2026-10-25' },
+    { id: 'a2', sample: true, name: 'Gulnora Ismailova', city: 'samarkand', status: 'pending',            sent: '2026-10-26' },
+    { id: 'a3', sample: true, name: 'Otabek Yuldashev',  city: 'fergana',   status: 'needs_resubmission', sent: '2026-10-22' },
+    { id: 'a4', sample: true, name: 'Shahlo Murodova',   city: 'bukhara',   status: 'rejected',           sent: '2026-10-20' },
+    { id: 'a5', sample: true, name: 'Anvar Sodiqov',     city: 'namangan',  status: 'not_started',        sent: '' }
+  ];
+
+  /* Sample reports. targetType is "gig" or "profile". */
+  D.reports = [
+    { id: 'p1', sample: true, targetType: 'gig',     targetId: 'g7', reason: 'outside_payment', date: '2026-10-26' },
+    { id: 'p2', sample: true, targetType: 'profile', targetId: 'w4', reason: 'rude',            date: '2026-10-25' },
+    { id: 'p3', sample: true, targetType: 'gig',     targetId: 'g9', reason: 'risky_place',     date: '2026-10-24' },
+    { id: 'p4', sample: true, targetType: 'profile', targetId: 'w6', reason: 'fake',            date: '2026-10-21' }
+  ];
   /* ----- Helpers (they never crash: when nothing is found they return null or an empty list) ----- */
   function findById(list, id) {
     for (var i = 0; i < list.length; i++) {

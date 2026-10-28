@@ -22,8 +22,8 @@ window.INANDOUT_FEATURES = {
   ------------------------------------------------------------------------ */
   payments: false,
 
-  /* ---- 2. ESCROW (safe money holding) ----------------------------------
-     WHAT IT DOES: holds the client's money safely until the job is done,
+  /* ---- 2. ESCROW (money holding) ----------------------------------
+     WHAT IT DOES: holds the client's money until the job is done,
        and only then releases it to the worker.
      SIGN UP FIRST: the same payment provider as above, and you must ask
        them whether they support holding money (escrow). Escrow needs

@@ -13,7 +13,7 @@
       if (!IO.isOn('payments')) {
         IO.showMessage(
           IO.t('feature.needsPayments',
-            'Safe payment holding needs online payments to be switched on first.'),
+            'Payment holding needs online payments to be switched on first.'),
           'info'
         );
         return;
